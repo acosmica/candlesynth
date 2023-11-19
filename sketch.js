@@ -5,5 +5,6 @@ function setup() {
   
   function draw() {
     //oi
+    ellipse(200, 200, 50, 50);
     background(255);
   }
