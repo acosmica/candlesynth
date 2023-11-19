@@ -4,7 +4,11 @@ function setup() {
   }
   
   function draw() {
-    //oi
-    ellipse(200, 200, 50, 50);
     background(255);
+    push();
+    fill(0);
+    translate(width*0.5, height*0.5);
+    rotate(frameCount*0.01);
+    rect(0,0, 100, 100);
+    pop();
   }
