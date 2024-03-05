@@ -28,3 +28,8 @@ To run this project, follow these steps:
 ## License
 
 This project is licensed under the [insert license here] License - see the LICENSE.md file for details.
+
+## Acknowledgements
+
+This project is based on the [p5.js](https://github.com/processing/p5.js) library.
+The shader code used in this project is based on the [p5.js Shader Examples](https://github.com/aferriss/p5jsShaderExamples) repository.
