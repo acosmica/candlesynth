@@ -1,9 +1,5 @@
 let circles = [];
 let cam;
-let synth;
-let notes = [];
-let oldestNote;
-let maxPoints = 3; 
 
 // the shader variable
 let camShader;
@@ -90,7 +86,7 @@ function draw() {
     for (let y = 0; y < height; y += 10) {
       const [r, g, b] = get(x, y); // get colors
       
-      if (b > 240 && random() > 0.99) {
+      if (b > 240 && random() > 0.995) {
         circles.push({ x, y, alpha: 255, b });
       }
     }
@@ -128,6 +124,12 @@ function playNote(x, y, b) {
   let volume = map(y, 0, height, 0.4, 1);
   sustain = map(b, 240, 255, 0.5, 1);
   synth.play(note*243+21, volume, 0, sustain); 
+}
+
+function keyPressed() {
+  // Toggle fullscreen mode
+  let fs = fullscreen();
+  fullscreen(!fs);
 }
 
 function windowResized(){
