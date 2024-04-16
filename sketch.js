@@ -107,8 +107,10 @@ function draw() {
   // index2 = (index1+numLayers/3)%layers.length; // 30
   // index3 = (index1+numLayers/3 * 2)%layers.length; // 60
   // console.log(numLayers);
-  circles.shift();
 
+  if (circles.length > 0) {
+    circles.shift();
+  }
   // increase all indices by 1, resetting if it goes over layers.length
   // the index runs in a circle 0, 1, 2, ... 29, 30, 0, 1, 2, etc.
   // index1
@@ -123,13 +125,22 @@ function playNote(x, y, b) {
   let note = map(x, 0, width, 0,1);
   let volume = map(y, 0, height, 0.4, 1);
   sustain = map(b, 240, 255, 0.5, 1);
-  synth.play(note*243+21, volume, 0, sustain); 
+  try {
+  synth.play(note*243+21, volume, 0,sustain); 
+  } catch(err) {
+    console.log(err);
+  }
 }
 
 function keyPressed() {
   // Toggle fullscreen mode
   let fs = fullscreen();
   fullscreen(!fs);
+}
+
+function mousePressed() {
+  userStartAudio();
+  console.log('audio started');
 }
 
 function windowResized(){
