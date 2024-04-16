@@ -23,9 +23,19 @@ let index1 = 0;
 let index2 = numLayers/3; // 30
 let index3 = numLayers/3 * 2; // 60
 
+// Classifier Variable
+let classifier;
+// Model URL
+let imageModelURL = 'https://teachablemachine.withgoogle.com/models/zSkoN7YWo/';
+// To store the classification
+let label = "";
+//first call to classify
+let classifyStart = false;
+
 function preload(){
   // load the shader
-  camShader = loadShader('effect.vert', 'effect.frag');
+  camShader = loadShader('glsl/effect.vert', 'glsl/effect.frag');
+  classifier = ml5.imageClassifier(imageModelURL + 'model.json');
 }
 
 function drawCircle(x, y, alpha) {
@@ -56,11 +66,22 @@ function setup() {
     let l = createGraphics(windowWidth, windowHeight);
     layers.push(l);
   }
+
+  flippedVideo = ml5.flipImage(cam);
+  // Start classifying
+  if (cam.loadedmetadata) {
+    classifyVideo();
+  }
 }
 
 function draw() {
   // your draw code here
   if (cam.loadedmetadata) {
+
+    if (!classifyStart) {
+      classifyVideo();
+      classifyStart = true;
+    }
     // image(cam, 0, 0, width, height);
     // draw the camera on the current layer
     layers[index1].image(cam, 0, 0, width, height);
@@ -80,13 +101,19 @@ function draw() {
     scale(-1, 1);
     image(shaderLayer, 0,0,width, height);
     pop();
+
+    // Draw the label
+    fill(255);
+    textSize(16);
+    textAlign(CENTER);
+    text(label, width / 2, height - 4);
   }
 
   for (let x = 0; x < width; x += 10) {
     for (let y = 0; y < height; y += 10) {
       const [r, g, b] = get(x, y); // get colors
       
-      if (b > 240 && random() > 0.995) {
+      if (b > 240 && random() > 0.999) {
         circles.push({ x, y, alpha: 255, b });
       }
     }
@@ -128,7 +155,8 @@ function playNote(x, y, b) {
   try {
   synth.play(note*243+21, volume, 0,sustain); 
   } catch(err) {
-    console.log(err);
+    // console.log(err);
+    
   }
 }
 
@@ -145,4 +173,28 @@ function mousePressed() {
 
 function windowResized(){
   resizeCanvas(windowWidth, windowHeight);
+}
+
+// Get a prediction for the current video frame
+function classifyVideo() {
+  flippedVideo = ml5.flipImage(cam)
+  classifier.classify(flippedVideo, gotResult);
+  flippedVideo.remove();
+
+}
+
+// When we get a result
+function gotResult(error, results) {
+  // If there is an error
+  if (error) {
+    console.error(error);
+    return;
+  }
+  // The results are in an array ordered by confidence.
+  // console.log(results[0]);
+  label = results[0].label;
+  console.log(label);
+  // console.log(results);
+  // Classifiy again!
+  classifyVideo();
 }
