@@ -3,6 +3,9 @@
 let sensitivity = 250;
 //probability of triggering a circle
 let probability = 0.999;
+//number of audio instances
+let audioInstances = 6;
+
 
 let circles = [];
 let cam;
@@ -40,7 +43,7 @@ let confidence = [];
 let classifyStart = false;
 
 let audio = [];
-let audioInstances = 6;
+
 
 
 
@@ -229,7 +232,6 @@ function classifyVideo() {
   flippedVideo = ml5.flipImage(cam)
   classifier.classify(flippedVideo, gotResult);
   flippedVideo.remove();
-
 }
 
 // When we get a result
