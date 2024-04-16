@@ -1,3 +1,9 @@
+
+//min pixel value to trigger circles
+let sensitivity = 250;
+//probability of triggering a circle
+let probability = 0.999;
+
 let circles = [];
 let cam;
 
@@ -35,6 +41,8 @@ let classifyStart = false;
 
 let audio = [];
 let audioInstances = 6;
+
+
 
 function preload(){
   // load the shader
@@ -84,6 +92,7 @@ function setup() {
 
   noStroke();
   colorMode(HSB);
+  rectMode(CENTER);
 }
 
 function draw() {
@@ -123,20 +132,36 @@ function draw() {
     // Draw the confidence
     blendMode(OVERLAY);
     for (let i = 0; i < confidence.length; i++) {
-      let y = height - (i * height / confidence.length);
-      fill(i * 360 / confidence.length, 255, 255);
-      rect(0, y, width * confidence[i], height / confidence.length);
+      let x = (i * width / confidence.length) + width / confidence.length / 2;
+      let sqHeight = map(confidence[i], 0, 1, 0, height);
+      fill(i * 360 / confidence.length, 255, 255, 120);
+      rect(x, height/2, width / confidence.length, sqHeight);
     }
     blendMode(BLEND);
   }
 
-  for (let x = 0; x < width; x += 10) {
-    for (let y = 0; y < height; y += 10) {
-      const [r, g, b] = get(x, y); // get colors
+  // for (let x = 0; x < width; x += 10) {
+  //   for (let y = 0; y < height; y += 10) {
+  //     const [r, g, b] = get(x, y); // get colors
       
-      if (b > 240 && random() > 0.999) {
-        circles.push({ x, y, alpha: 255, b });
-      }
+  //     if (b > 240 && random() > 0.999) {
+  //       circles.push({ x, y, alpha: 255, b });
+  //     }
+  //   }
+  // }
+
+  cam.loadPixels();
+  for (let i=0; i<cam.pixels.length; i+=4) {
+    let r = cam.pixels[i];
+    let g = cam.pixels[i+1];
+    let b = cam.pixels[i+2];
+    let a = cam.pixels[i+3];
+    if ((r+g+b)/3 > sensitivity && random() > probability) {
+      let x = (i/4) % cam.width;
+      let y = Math.floor((i/4) / cam.width);
+      x = map(x, 0, cam.width, width, 0);
+      y = map(y, 0, cam.height, 0, height);
+      circles.push({ x, y, alpha: 255, b });
     }
   }
 
