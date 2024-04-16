@@ -26,16 +26,24 @@ let index3 = numLayers/3 * 2; // 60
 // Classifier Variable
 let classifier;
 // Model URL
-let imageModelURL = 'https://teachablemachine.withgoogle.com/models/zSkoN7YWo/';
+let imageModelURL = 'res/model/';
 // To store the classification
 let label = "";
+let confidence = [];
 //first call to classify
 let classifyStart = false;
+
+let audio = [];
+let audioInstances = 6;
 
 function preload(){
   // load the shader
   camShader = loadShader('glsl/effect.vert', 'glsl/effect.frag');
-  classifier = ml5.imageClassifier(imageModelURL + 'model.json');
+  classifier = ml5.imageClassifier(imageModelURL + 'model.json')
+  for (let i = 0; i < audioInstances; i++) {
+    audio[i] = loadSound('res/audio/'+(i+1)+'.wav');
+  }
+  // audio = loadSound('res/audio/test_file.mp3');
 }
 
 function drawCircle(x, y, alpha) {
@@ -72,6 +80,10 @@ function setup() {
   if (cam.loadedmetadata) {
     classifyVideo();
   }
+  
+
+  noStroke();
+  colorMode(HSB);
 }
 
 function draw() {
@@ -107,6 +119,15 @@ function draw() {
     textSize(16);
     textAlign(CENTER);
     text(label, width / 2, height - 4);
+
+    // Draw the confidence
+    blendMode(OVERLAY);
+    for (let i = 0; i < confidence.length; i++) {
+      let y = height - (i * height / confidence.length);
+      fill(i * 360 / confidence.length, 255, 255);
+      rect(0, y, width * confidence[i], height / confidence.length);
+    }
+    blendMode(BLEND);
   }
 
   for (let x = 0; x < width; x += 10) {
@@ -162,13 +183,16 @@ function playNote(x, y, b) {
 
 function keyPressed() {
   // Toggle fullscreen mode
-  let fs = fullscreen();
-  fullscreen(!fs);
+  // let fs = fullscreen();
+  // fullscreen(!fs);
 }
 
 function mousePressed() {
   userStartAudio();
   console.log('audio started');
+  //play([startTime], [rate], [amp], [cueStart], [duration])
+  // audio.loop(0,0.3, 1, 0.5, 0.6);
+  // audio.loop(0,0.5, 1, 0.1, 0.2);
 }
 
 function windowResized(){
@@ -190,11 +214,35 @@ function gotResult(error, results) {
     console.error(error);
     return;
   }
-  // The results are in an array ordered by confidence.
-  // console.log(results[0]);
-  label = results[0].label;
-  console.log(label);
+  
+  results.forEach((result, index) => {
+    // Update the confidence array
+    confidence[result.label] = result.confidence;
+  });
+
+  // console.log(confidence);
+
+  label = parseInt(results[0].label);
+  // console.log(results);
+  updateAudio(label);
   // console.log(results);
   // Classifiy again!
   classifyVideo();
+}
+
+function updateAudio(index) {
+
+  if (index>0) 
+  if (!audio[index-1].isPlaying()) {
+    //play([startTime], [rate], [amp], [cueStart], [duration])
+    console.log('playing audio', index);
+    
+    rate = random(0.5,1.2);
+    amp = 1;
+    duration = random(0.2,0.8);
+    cueStart = random(0, 1-duration);
+    
+    audio[index-1].play(0, rate, amp, cueStart, duration); 
+  }
+
 }
