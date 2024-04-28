@@ -9,10 +9,13 @@ let audioInstances = 6;
 let loopInstances = 16;
 
 // show the player line
-let showPlayer = true;
+let showPlayer = false;
+let calibrate = false;
+let showBlobs = false;
 
 let circles = [];
 let blobs = [];
+let rblobs = [];
 let cam;
 
 // the shader variable
@@ -51,13 +54,18 @@ let audio = [];
 let loops = [];
 
 let colors;
+let reds;
 let trackingData;
+let trackingDataRed;
 
 let camRatio = {w: 0, h: 0};
 
 let playerY = 0;
 let bpm = 120;
 let playerSpeed;
+
+let minSize = { w: 1000, h: 1000};
+let maxSize = { w: 0, h: 0};
 
 
 function preload(){
@@ -110,9 +118,30 @@ function setup() {
   flippedVideo = ml5.flipImage(cam);
   // Start classifying
   if (cam.loadedmetadata) {
-    classifyVideo();
+    // classifyVideo();
   }
   
+  tracking.ColorTracker.registerColor('red', function(r, g, b) {
+    if (r > 150 && g < 100 && b < 100) {
+      return true;
+    }
+    return false;
+  });
+
+  tracking.ColorTracker.registerColor('blue', function(r, g, b) {
+    if (r < 50 && g < 50 && b > 200) {
+      return true;
+    }
+    return false;
+  });
+
+  // tracking.ColorTracker.registerColor('yellow', function(r, g, b) {
+  //   if (r > 200 && g > 200 && b > 200) {
+  //     return true;
+  //   }
+  //   return false;
+  // });
+
 
   colors = new tracking.ColorTracker(['yellow']);
   tracking.track('#myVideo', colors); // start the tracking of the colors above on the camera in p5
@@ -122,6 +151,13 @@ function setup() {
       trackingData = event.data // break the trackingjs data into a global so we can access it with p5
   });
 
+  reds = new tracking.ColorTracker(['red']);
+  tracking.track('#myVideo', reds); // start the tracking of the colors above on the camera in p5
+
+  //start detecting the tracking
+  reds.on('track', function(event) { //this happens each time the tracking happens
+      trackingDataRed = event.data // break the trackingjs data into a global so we can access it with p5
+  });
 
   noStroke();
   colorMode(HSB);
@@ -161,21 +197,21 @@ function draw() {
     pop();
 
     // Draw the label
-    fill(255);
-    textSize(16);
-    textAlign(CENTER);
-    text(label, width / 2, height - 4);
+    // fill(255);
+    // textSize(16);
+    // textAlign(CENTER);
+    // text(label, width / 2, height - 4);
 
     // Draw the confidence
-    blendMode(OVERLAY);
-    for (let i = 0; i < confidence.length; i++) {
-      let x = (i * width / confidence.length) + width / confidence.length / 2;
-      let sqHeight = map(confidence[i], 0, 1, 0, height);
-      fill(i * 360 / confidence.length, 255, 255, 120);
-      rect(x, height/2, width / confidence.length, sqHeight);
-    }
+    // blendMode(OVERLAY);
+    // for (let i = 0; i < confidence.length; i++) {
+    //   let x = (i * width / confidence.length) + width / confidence.length / 2;
+    //   let sqHeight = map(confidence[i], 0, 1, 0, height);
+    //   fill(i * 360 / confidence.length, 255, 255, 120);
+    //   rect(x, height/2, width / confidence.length, sqHeight);
+    // }
     blendMode(BLEND);
-
+  }
     // console.log(trackingData);
     if(trackingData){ //if there is tracking data to look at, then...
       blobs = [];
@@ -185,34 +221,79 @@ function draw() {
         //             trackingData[i].y*camRatio.h+trackingData[i].height,
         //             trackingData[i].width*camRatio.w,
         //             trackingData[i].height*camRatio.h);
-        blobs.push({x: width-(trackingData[i].x*camRatio.w)-trackingData[i].width,
+        blob = {x: width-(trackingData[i].x*camRatio.w)-trackingData[i].width,
                     y: trackingData[i].y*camRatio.h+trackingData[i].height,
-                    width: trackingData[i].width*camRatio.w,
-                    height: trackingData[i].height*camRatio.h});
+                    width: trackingData[i].width,
+                    height: trackingData[i].height};
+        // blobs.push({x: width-(trackingData[i].x*camRatio.w)-trackingData[i].width,
+        //             y: trackingData[i].y*camRatio.h+trackingData[i].height,
+        //             width: trackingData[i].width,
+        //             height: trackingData[i].height});
+        if (calibrate || blob.width < maxSize.w && blob.width > minSize.w && blob.height < maxSize.h && blob.height > minSize.h)
+          blobs.push(blob);
       }
     }
 
-  }
+    if(trackingDataRed){ //if there is tracking data to look at, then...
+      rblobs = [];
+      for (var i = 0; i < trackingDataRed.length; i++) { //loop through each of the detected colors
+        // console.log( trackingData[i] )
+        // rect(width-(trackingData[i].x*camRatio.w)-trackingData[i].width,
+        //             trackingData[i].y*camRatio.h+trackingData[i].height,
+        //             trackingData[i].width*camRatio.w,
+        //             trackingData[i].height*camRatio.h);
+        rblobs.push({x: width-(trackingDataRed[i].x*camRatio.w)-trackingDataRed[i].width,
+                    y: trackingDataRed[i].y*camRatio.h+trackingDataRed[i].height,
+                    width: trackingDataRed[i].width,
+                    height: trackingDataRed[i].height});
+      }
+      // console.log(rblobs.length);
+    }
 
 
   // draw the blobs
-  for (let i = 0; i < blobs.length; i++) {
-    let blob = blobs[i];
-    rect(blob.x, blob.y, blob.width, blob.height);
+  if (showBlobs) {
+    for (let i = 0; i < blobs.length; i++) {
+      let blob = blobs[i];
+      rect(blob.x, blob.y, blob.width, blob.height);
+      
+      if (blob.width > maxSize.w) maxSize.w = blob.width;
+      if (blob.height > maxSize.h) maxSize.h = blob.height;
+      if (blob.width < minSize.w) minSize.w = blob.width;
+      if (blob.height < minSize.h) minSize.h = blob.height;
+    }
+    if (calibrate) {
+      console.log(blobs.length);
+      console.log('minSize', minSize);
+      console.log('maxSize', maxSize);
+    }
+
+    for (let i = 0; i < rblobs.length; i++) {
+      let blob = rblobs[i];
+      rect(blob.x, blob.y, blob.width, blob.height);
+    }
   }
 
   //draw the player line
   if (showPlayer) {
     fill(255);
     rect(width/2, playerY, width, 10);
-    playerY = (playerY + playerSpeed) % height;
   }
+  playerY = (playerY + playerSpeed) % height;
 
   for (let i = 0; i < blobs.length; i++) {
     let blob = blobs[i];
     if (playerY > blob.y && playerY < blob.y + playerSpeed+2) {
       // playNote(blob.x, blob.y, blob.width);
       playAudio(blob.x, blob.y, blob.width, blob.height);
+    }
+  }
+
+  for (let i = 0; i < rblobs.length; i++) {
+    let blob = rblobs[i];
+    if (playerY > blob.y && playerY < blob.y + playerSpeed+2) {
+      playNote(blob.x, blob.y, blob.width);
+      // playAudio(blob.x, blob.y, blob.width, blob.height);
     }
   }
   
@@ -234,8 +315,29 @@ function playNote(x, y, b) {
 
 function keyPressed() {
  // Toggle fullscreen mode
-  let fs = fullscreen();
-  fullscreen(!fs);
+  if (key == 'F') {
+    let fs = fullscreen();
+    fullscreen(!fs);
+  } else if (key == 'P') {
+    showPlayer = !showPlayer;
+    console.log('showPlayer', showPlayer);
+  } else if (key == 'C') {
+    if (!calibrate) {
+      minSize = { w: 1000, h: 1000};
+      maxSize = { w: 0, h: 0};
+    }
+    calibrate = !calibrate;
+
+    if (calibrate) {
+      showBlobs = true;
+      showPlayer = true;
+    }
+    console.log('calibrate', calibrate);
+  } else if (key == 'B') { 
+    showBlobs = !showBlobs;
+    console.log('showBlobs', showBlobs);
+  }
+
 }
 
 function mousePressed() {
@@ -298,11 +400,11 @@ function updateAudio(index) {
 
 function playAudio(x, y, w, h) {
   index = int(map(x, 0, width, 0, loopInstances));
-  console.log(x + " " + index);
+
   if (!loops[index].isPlaying()) {
     //play([startTime], [rate], [amp], [cueStart], [duration])
-    console.log('playing audio', index);
-    
+    loops[index].stop();
+   
     // rate = random(0.5,1.2);
     // amp = 0.2;
     // duration = random(0.2,0.8);
@@ -316,3 +418,4 @@ function playAudio(x, y, w, h) {
     loops[index].play(0, rate, amp); 
   }
 }
+
