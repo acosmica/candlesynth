@@ -12,6 +12,7 @@ let loopInstances = 16;
 let showPlayer = false;
 let calibrate = false;
 let showBlobs = false;
+let mute = false;
 
 let circles = [];
 let blobs = [];
@@ -307,7 +308,8 @@ function playNote(x, y, b) {
   let volume = map(y, 0, height, 0.4, 1);
   sustain = map(b, 0, 255, 0.5, 1);
   try {
-  synth.play(note*243+21, volume, 0,sustain); 
+    if (!mute)
+      synth.play(note*243+21, volume, 0,sustain); 
   } catch(err) {
     // console.log(err);
   }
@@ -336,6 +338,14 @@ function keyPressed() {
   } else if (key == 'B') { 
     showBlobs = !showBlobs;
     console.log('showBlobs', showBlobs);
+  } else if (key == 'M') {
+    mute = !mute;
+    if (mute) {
+      for (let i = 0; i < audioInstances; i++) {
+        audio[i].stop();
+      }
+    }
+    console.log('mute', mute);
   }
 
 }
@@ -401,7 +411,7 @@ function updateAudio(index) {
 function playAudio(x, y, w, h) {
   index = int(map(x, 0, width, 0, loopInstances));
 
-  if (!loops[index].isPlaying()) {
+  if (!loops[index].isPlaying() && !mute) {
     //play([startTime], [rate], [amp], [cueStart], [duration])
     loops[index].stop();
    
