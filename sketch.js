@@ -195,58 +195,10 @@ function draw() {
   for (let i = 0; i < blobs.length; i++) {
     let blob = blobs[i];
     if (playerY > blob.y && playerY < blob.y + blob.height) {
-      playNote(blob.x, blob.y, 255);
+      playNote(blob.x, blob.y, blob.width);
     }
   }
-  // for (let x = 0; x < width; x += 10) {
-  //   for (let y = 0; y < height; y += 10) {
-  //     const [r, g, b] = get(x, y); // get colors
-      
-  //     if (b > 240 && random() > 0.999) {
-  //       circles.push({ x, y, alpha: 255, b });
-  //     }
-  //   }
-  // }
-
-  // cam.loadPixels();
-  // for (let i=0; i<cam.pixels.length; i+=4) {
-  //   let r = cam.pixels[i];
-  //   let g = cam.pixels[i+1];
-  //   let b = cam.pixels[i+2];
-  //   let a = cam.pixels[i+3];
-  //   if ((r+g+b)/3 > sensitivity && random() > probability) {
-  //     let x = (i/4) % cam.width;
-  //     let y = Math.floor((i/4) / cam.width);
-  //     x = map(x, 0, cam.width, width, 0);
-  //     y = map(y, 0, cam.height, 0, height);
-  //     circles.push({ x, y, alpha: 255, b });
-  //   }
-  // }
-
-  // for (let i = circles.length - 1; i >= 0; i--) {
-  //   let circle = circles[i];
-  //   drawCircle(circle.x, circle.y, circle.alpha);
-  //   playNote(circle.x, circle.y, circle.b);
-  //   circle.alpha -= 1; // adjust fading speed here
-
-  //   if (circle.alpha <= 0) {
-  //     circles.splice(i, 1);
-  //   }
-  // }
-  // numLayers = 90 + circles.length*9;
-  // index1 = 0;
-  // index2 = (index1+numLayers/3)%layers.length; // 30
-  // index3 = (index1+numLayers/3 * 2)%layers.length; // 60
-  // console.log(numLayers);
-
-  // if (circles.length > 0) {
-  //   circles.shift();
-  // }
-  // increase all indices by 1, resetting if it goes over layers.length
-  // the index runs in a circle 0, 1, 2, ... 29, 30, 0, 1, 2, etc.
-  // index1
-  // index2 will be somewhere in the past
-  // index3 will be even further into the past
+  
   index1 = (index1 + 1)  % layers.length;
   index2 = (index2 + 1) % layers.length;
   index3 = (index3 + 1) % layers.length;
@@ -255,12 +207,11 @@ function draw() {
 function playNote(x, y, b) {
   let note = map(x, 0, width, 0,1);
   let volume = map(y, 0, height, 0.4, 1);
-  sustain = map(b, 240, 255, 0.5, 1);
+  sustain = map(b, 0, 255, 0.5, 1);
   try {
   synth.play(note*243+21, volume, 0,sustain); 
   } catch(err) {
     // console.log(err);
-    
   }
 }
 
@@ -324,7 +275,7 @@ function updateAudio(index) {
     duration = random(0.2,0.8);
     cueStart = random(0, 1-duration);
     
-    audio[index-1].play(0, rate, amp, cueStart, duration); 
+    //audio[index-1].play(0, rate, amp, cueStart, duration); 
   }
 
 }
