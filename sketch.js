@@ -8,6 +8,7 @@ let audioInstances = 6;
 
 
 let circles = [];
+let blobs = [];
 let cam;
 
 // the shader variable
@@ -44,7 +45,12 @@ let classifyStart = false;
 
 let audio = [];
 
+let colors;
+let trackingData;
 
+let camRatio = {w: 0, h: 0};
+
+let playerY = 0;
 
 
 function preload(){
@@ -66,7 +72,11 @@ function setup() {
   createCanvas(windowWidth, windowHeight);
   cam = createCapture(VIDEO);
   // cam.size(windowWidth, windowHeight);
-  cam.hide();
+  cam.position(0,0);
+  cam.style('opacity',0)// use this to hide the capture later on (change to 0 to hide)...
+  // cam.hide();
+  cam.id("myVideo"); //give the capture an ID so we can use it in the tracker below.
+
   synth = new p5.PolySynth();
 
   synth.setADSR(0.5, 0.5, 0.5, 0.5, 4);
@@ -93,6 +103,15 @@ function setup() {
   }
   
 
+  colors = new tracking.ColorTracker(['yellow']);
+  tracking.track('#myVideo', colors); // start the tracking of the colors above on the camera in p5
+
+  //start detecting the tracking
+  colors.on('track', function(event) { //this happens each time the tracking happens
+      trackingData = event.data // break the trackingjs data into a global so we can access it with p5
+  });
+
+
   noStroke();
   colorMode(HSB);
   rectMode(CENTER);
@@ -101,7 +120,8 @@ function setup() {
 function draw() {
   // your draw code here
   if (cam.loadedmetadata) {
-
+    camRatio.w = windowWidth/cam.width;
+    camRatio.h = windowHeight/cam.height;
     if (!classifyStart) {
       classifyVideo();
       classifyStart = true;
@@ -141,8 +161,43 @@ function draw() {
       rect(x, height/2, width / confidence.length, sqHeight);
     }
     blendMode(BLEND);
+
+    // console.log(trackingData);
+    if(trackingData){ //if there is tracking data to look at, then...
+      blobs = [];
+      for (var i = 0; i < trackingData.length; i++) { //loop through each of the detected colors
+        // console.log( trackingData[i] )
+        // rect(width-(trackingData[i].x*camRatio.w)-trackingData[i].width,
+        //             trackingData[i].y*camRatio.h+trackingData[i].height,
+        //             trackingData[i].width*camRatio.w,
+        //             trackingData[i].height*camRatio.h);
+        blobs.push({x: width-(trackingData[i].x*camRatio.w)-trackingData[i].width,
+                    y: trackingData[i].y*camRatio.h+trackingData[i].height,
+                    width: trackingData[i].width*camRatio.w,
+                    height: trackingData[i].height*camRatio.h});
+      }
+    }
+
   }
 
+
+  // draw the blobs
+  for (let i = 0; i < blobs.length; i++) {
+    let blob = blobs[i];
+    rect(blob.x, blob.y, blob.width, blob.height);
+  }
+
+  //draw the player line
+  fill(255);
+  rect(width/2, playerY, width, 10);
+  playerY = (playerY + 16) % height;
+
+  for (let i = 0; i < blobs.length; i++) {
+    let blob = blobs[i];
+    if (playerY > blob.y && playerY < blob.y + blob.height) {
+      playNote(blob.x, blob.y, 255);
+    }
+  }
   // for (let x = 0; x < width; x += 10) {
   //   for (let y = 0; y < height; y += 10) {
   //     const [r, g, b] = get(x, y); // get colors
@@ -153,40 +208,40 @@ function draw() {
   //   }
   // }
 
-  cam.loadPixels();
-  for (let i=0; i<cam.pixels.length; i+=4) {
-    let r = cam.pixels[i];
-    let g = cam.pixels[i+1];
-    let b = cam.pixels[i+2];
-    let a = cam.pixels[i+3];
-    if ((r+g+b)/3 > sensitivity && random() > probability) {
-      let x = (i/4) % cam.width;
-      let y = Math.floor((i/4) / cam.width);
-      x = map(x, 0, cam.width, width, 0);
-      y = map(y, 0, cam.height, 0, height);
-      circles.push({ x, y, alpha: 255, b });
-    }
-  }
+  // cam.loadPixels();
+  // for (let i=0; i<cam.pixels.length; i+=4) {
+  //   let r = cam.pixels[i];
+  //   let g = cam.pixels[i+1];
+  //   let b = cam.pixels[i+2];
+  //   let a = cam.pixels[i+3];
+  //   if ((r+g+b)/3 > sensitivity && random() > probability) {
+  //     let x = (i/4) % cam.width;
+  //     let y = Math.floor((i/4) / cam.width);
+  //     x = map(x, 0, cam.width, width, 0);
+  //     y = map(y, 0, cam.height, 0, height);
+  //     circles.push({ x, y, alpha: 255, b });
+  //   }
+  // }
 
-  for (let i = circles.length - 1; i >= 0; i--) {
-    let circle = circles[i];
-    drawCircle(circle.x, circle.y, circle.alpha);
-    playNote(circle.x, circle.y, circle.b);
-    circle.alpha -= 1; // adjust fading speed here
+  // for (let i = circles.length - 1; i >= 0; i--) {
+  //   let circle = circles[i];
+  //   drawCircle(circle.x, circle.y, circle.alpha);
+  //   playNote(circle.x, circle.y, circle.b);
+  //   circle.alpha -= 1; // adjust fading speed here
 
-    if (circle.alpha <= 0) {
-      circles.splice(i, 1);
-    }
-  }
+  //   if (circle.alpha <= 0) {
+  //     circles.splice(i, 1);
+  //   }
+  // }
   // numLayers = 90 + circles.length*9;
   // index1 = 0;
   // index2 = (index1+numLayers/3)%layers.length; // 30
   // index3 = (index1+numLayers/3 * 2)%layers.length; // 60
   // console.log(numLayers);
 
-  if (circles.length > 0) {
-    circles.shift();
-  }
+  // if (circles.length > 0) {
+  //   circles.shift();
+  // }
   // increase all indices by 1, resetting if it goes over layers.length
   // the index runs in a circle 0, 1, 2, ... 29, 30, 0, 1, 2, etc.
   // index1
