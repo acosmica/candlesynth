@@ -1,8 +1,8 @@
 
 //min pixel value to trigger circles
-let sensitivity = 250;
+let sensitivity = 252;
 //probability of triggering a circle
-let probability = 0.999;
+let probability = 0.993;
 //number of audio instances
 let audioInstances = 6;
 
@@ -58,8 +58,8 @@ function preload(){
 }
 
 function drawCircle(x, y, alpha) {
-  fill(255, 255, 255, alpha);
-  ellipse(x, y, 10);
+ // fill(255, 255, 255, alpha);
+ // ellipse(x, y, 10);
 }
 
 function setup() {
@@ -210,9 +210,9 @@ function playNote(x, y, b) {
 }
 
 function keyPressed() {
-  // Toggle fullscreen mode
-  // let fs = fullscreen();
-  // fullscreen(!fs);
+ // Toggle fullscreen mode
+  let fs = fullscreen();
+  fullscreen(!fs);
 }
 
 function mousePressed() {
@@ -265,7 +265,7 @@ function updateAudio(index) {
     console.log('playing audio', index);
     
     rate = random(0.5,1.2);
-    amp = 1;
+    amp = 0.2;
     duration = random(0.2,0.8);
     cueStart = random(0, 1-duration);
     
