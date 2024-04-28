@@ -6,6 +6,8 @@ let probability = 0.993;
 //number of audio instances
 let audioInstances = 6;
 
+let loopInstances = 16;
+
 
 let circles = [];
 let blobs = [];
@@ -44,6 +46,7 @@ let confidence = [];
 let classifyStart = false;
 
 let audio = [];
+let loops = [];
 
 let colors;
 let trackingData;
@@ -51,6 +54,8 @@ let trackingData;
 let camRatio = {w: 0, h: 0};
 
 let playerY = 0;
+let bpm = 120;
+let playerSpeed;
 
 
 function preload(){
@@ -59,6 +64,10 @@ function preload(){
   classifier = ml5.imageClassifier(imageModelURL + 'model.json')
   for (let i = 0; i < audioInstances; i++) {
     audio[i] = loadSound('res/audio/'+(i+1)+'.wav');
+  }
+
+  for (let i = 0; i < loopInstances; i++) {
+    loops[i] = loadSound('res/loops/'+(i)+'.wav');
   }
   // audio = loadSound('res/audio/test_file.mp3');
 }
@@ -115,6 +124,9 @@ function setup() {
   noStroke();
   colorMode(HSB);
   rectMode(CENTER);
+  // playerSpeed = height / 120/60/30 * 8;
+  let bpf = bpm / 60 / 30;
+  playerSpeed = height * bpf /4;
 }
 
 function draw() {
@@ -190,12 +202,13 @@ function draw() {
   //draw the player line
   fill(255);
   rect(width/2, playerY, width, 10);
-  playerY = (playerY + 16) % height;
+  playerY = (playerY + playerSpeed) % height;
 
   for (let i = 0; i < blobs.length; i++) {
     let blob = blobs[i];
-    if (playerY > blob.y && playerY < blob.y + blob.height) {
-      playNote(blob.x, blob.y, blob.width);
+    if (playerY > blob.y && playerY < blob.y + playerSpeed+2) {
+      // playNote(blob.x, blob.y, blob.width);
+      playAudio(blob.x, blob.y, blob.width, blob.height);
     }
   }
   
@@ -268,7 +281,7 @@ function updateAudio(index) {
   if (index>0) 
   if (!audio[index-1].isPlaying()) {
     //play([startTime], [rate], [amp], [cueStart], [duration])
-    console.log('playing audio', index);
+    //console.log('playing audio', index);
     
     rate = random(0.5,1.2);
     amp = 0.2;
@@ -277,5 +290,25 @@ function updateAudio(index) {
     
     //audio[index-1].play(0, rate, amp, cueStart, duration); 
   }
+}
 
+function playAudio(x, y, w, h) {
+  index = int(map(x, 0, width, 0, loopInstances));
+  console.log(x + " " + index);
+  if (!loops[index].isPlaying()) {
+    //play([startTime], [rate], [amp], [cueStart], [duration])
+    console.log('playing audio', index);
+    
+    // rate = random(0.5,1.2);
+    // amp = 0.2;
+    // duration = random(0.2,0.8);
+    // cueStart = random(0, 1-duration);
+
+    rate = 1;
+    amp = 0.5;
+    duration = random(0.2,0.8);
+    cueStart = random(0, 1-duration);
+    
+    loops[index].play(0, rate, amp); 
+  }
 }
