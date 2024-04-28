@@ -8,6 +8,8 @@ let audioInstances = 6;
 
 let loopInstances = 16;
 
+// show the player line
+let showPlayer = true;
 
 let circles = [];
 let blobs = [];
@@ -200,9 +202,11 @@ function draw() {
   }
 
   //draw the player line
-  fill(255);
-  rect(width/2, playerY, width, 10);
-  playerY = (playerY + playerSpeed) % height;
+  if (showPlayer) {
+    fill(255);
+    rect(width/2, playerY, width, 10);
+    playerY = (playerY + playerSpeed) % height;
+  }
 
   for (let i = 0; i < blobs.length; i++) {
     let blob = blobs[i];
