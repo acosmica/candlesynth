@@ -123,7 +123,7 @@ function setup() {
   }
   
   tracking.ColorTracker.registerColor('red', function(r, g, b) {
-    if (r > 150 && g < 100 && b < 100) {
+    if (r > 120 && g < 150 && b < 150) {
       return true;
     }
     return false;
@@ -136,15 +136,15 @@ function setup() {
     return false;
   });
 
-  // tracking.ColorTracker.registerColor('yellow', function(r, g, b) {
-  //   if (r > 200 && g > 200 && b > 200) {
-  //     return true;
-  //   }
-  //   return false;
-  // });
+  tracking.ColorTracker.registerColor('white', function(r, g, b) {
+    if (r > 220 && g > 220 && b > 220) {
+      return true;
+    }
+    return false;
+  });
 
 
-  colors = new tracking.ColorTracker(['yellow']);
+  colors = new tracking.ColorTracker(['white']);
   tracking.track('#myVideo', colors); // start the tracking of the colors above on the camera in p5
 
   //start detecting the tracking
@@ -161,8 +161,9 @@ function setup() {
   });
 
   noStroke();
-  colorMode(HSB);
+  // colorMode(HSB);
   rectMode(CENTER);
+  noCursor();
   // playerSpeed = height / 120/60/30 * 8;
   let bpf = bpm / 60 / 30;
   playerSpeed = height * bpf /4;
@@ -230,9 +231,12 @@ function draw() {
         //             y: trackingData[i].y*camRatio.h+trackingData[i].height,
         //             width: trackingData[i].width,
         //             height: trackingData[i].height});
-        if (calibrate || blob.width < maxSize.w && blob.width > minSize.w && blob.height < maxSize.h && blob.height > minSize.h)
-          blobs.push(blob);
-      }
+       if (calibrate) {
+         blobs.push(blob);
+       } else if (blob.width < maxSize.w && blob.width > minSize.w && blob.height < maxSize.h && blob.height > minSize.h) {
+         blobs.push(blob);
+       }
+      }//
     }
 
     if(trackingDataRed){ //if there is tracking data to look at, then...
@@ -253,31 +257,40 @@ function draw() {
 
 
   // draw the blobs
-  if (showBlobs) {
-    for (let i = 0; i < blobs.length; i++) {
-      let blob = blobs[i];
-      rect(blob.x, blob.y, blob.width, blob.height);
-      
-      if (blob.width > maxSize.w) maxSize.w = blob.width;
-      if (blob.height > maxSize.h) maxSize.h = blob.height;
-      if (blob.width < minSize.w) minSize.w = blob.width;
-      if (blob.height < minSize.h) minSize.h = blob.height;
-    }
-    if (calibrate) {
-      console.log(blobs.length);
-      console.log('minSize', minSize);
-      console.log('maxSize', maxSize);
+  for (let i = 0; i < blobs.length; i++) {
+    let blob = blobs[i];
+    if (showBlobs) {
+      fill(0,255,0,20);
+    } else {
+      fill(0,255,0,0);
     }
 
-    for (let i = 0; i < rblobs.length; i++) {
-      let blob = rblobs[i];
-      rect(blob.x, blob.y, blob.width, blob.height);
+    rect(blob.x, blob.y, blob.width, blob.height);
+      
+    if (calibrate) {
+      if (blob.width > maxSize.w) maxSize.w = blob.width*1.15;
+      if (blob.height > maxSize.h) maxSize.h = blob.height*1.15;
+      if (blob.width < minSize.w) minSize.w = blob.width*0.85;
+      if (blob.height < minSize.h) minSize.h = blob.height*0.85;
+        console.log('minSize', minSize, 'maxSize', maxSize);
     }
   }
+    
+    for (let i = 0; i < rblobs.length; i++) {
+      let blob = rblobs[i];
+      if (showBlobs) {
+        fill(0,0,255,20);
+      } else {
+        fill(0,0,255,0);
+      }
+      
+      rect(blob.x, blob.y, blob.width, blob.height);
+    }
+  
 
   //draw the player line
   if (showPlayer) {
-    fill(255);
+    fill(255, 10);
     rect(width/2, playerY, width, 10);
   }
   playerY = (playerY + playerSpeed) % height;
@@ -297,6 +310,12 @@ function draw() {
       // playAudio(blob.x, blob.y, blob.width, blob.height);
     }
   }
+
+  if (calibrate) {
+    fill(255,80);
+    ellipse(width-10,height-10,20,20);
+  }
+
   
   index1 = (index1 + 1)  % layers.length;
   index2 = (index2 + 1) % layers.length;
@@ -305,8 +324,9 @@ function draw() {
 
 function playNote(x, y, b) {
   let note = map(x, 0, width, 0,1);
-  let volume = map(y, 0, height, 0.4, 1);
-  sustain = map(b, 0, 255, 0.5, 1);
+  let volume = map(y, 0, height, 0.3, 0.7);
+  sustain = map(b, 0, 400, 0.1, 0.5);
+  // console.log(b);
   try {
     if (!mute)
       synth.play(note*243+21, volume, 0,sustain); 
@@ -324,16 +344,13 @@ function keyPressed() {
     showPlayer = !showPlayer;
     console.log('showPlayer', showPlayer);
   } else if (key == 'C') {
-    if (!calibrate) {
-      minSize = { w: 1000, h: 1000};
-      maxSize = { w: 0, h: 0};
-    }
+    
     calibrate = !calibrate;
 
-    if (calibrate) {
-      showBlobs = true;
-      showPlayer = true;
-    }
+    // if (calibrate) {
+    //   showBlobs = true;
+    //   showPlayer = true;
+    // }
     console.log('calibrate', calibrate);
   } else if (key == 'B') { 
     showBlobs = !showBlobs;
@@ -346,6 +363,19 @@ function keyPressed() {
       }
     }
     console.log('mute', mute);
+  } else if (key == 'R') {
+    maxSize = { w: 0, h: 0};
+    minSize = { w: 1000, h: 1000};
+    blobs = [];
+    rblobs = [];
+    bpm = 120;
+    console.log('reset');
+  } else if (keyCode == UP_ARROW) {
+    bpm+=5;
+    playerSpeed = height * bpm / 60 / 30 / 4;
+  } else if (keyCode == DOWN_ARROW) {
+    bpm+=5;
+    playerSpeed = height * bpm / 60 / 30 / 4;
   }
 
 }
@@ -421,7 +451,7 @@ function playAudio(x, y, w, h) {
     // cueStart = random(0, 1-duration);
 
     rate = 1;
-    amp = 0.5;
+    amp = 1;
     duration = random(0.2,0.8);
     cueStart = random(0, 1-duration);
     
